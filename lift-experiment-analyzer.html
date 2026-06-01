@@ -1,0 +1,315 @@
+<!-- LIFT — Growth Experiment Analyzer -->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LIFT — Know if it actually worked</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0c0f14;
+    --panel: #141922;
+    --panel-2: #1a2029;
+    --line: #262d38;
+    --line-2: #313a47;
+    --text: #e8edf4;
+    --muted: #93a0b1;
+    --faint: #5f6b7a;
+    --a: #5b8def;
+    --a-soft: rgba(91,141,239,0.16);
+    --b: #f5a33c;
+    --b-soft: rgba(245,163,60,0.16);
+    --green: #3ddc91;
+    --amber: #ffc24b;
+    --red: #ff6b6b;
+    --ui: 'Manrope', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--ui); -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 46px 24px 110px; }
+
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--a); display: inline-flex; align-items: center; gap: 9px; }
+  .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--a); }
+  h1 { font-size: clamp(38px, 6vw, 64px); font-weight: 800; letter-spacing: -0.03em; line-height: 0.98; margin-top: 14px; }
+  h1 .g { color: var(--a); }
+  .lede { color: var(--muted); font-size: clamp(15px,2vw,18px); max-width: 560px; margin-top: 16px; line-height: 1.5; }
+
+  .sec-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); margin: 40px 0 14px; }
+
+  .variants { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 620px){ .variants { grid-template-columns: 1fr; } }
+  .vcard { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; border-top-width: 3px; }
+  .vcard.a { border-top-color: var(--a); }
+  .vcard.b { border-top-color: var(--b); }
+  .vhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .vname { font-weight: 700; font-size: 16px; background: transparent; border: none; color: var(--text); font-family: var(--ui); width: 60%; }
+  .vname:focus { outline: none; }
+  .vtag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 8px; border-radius: 5px; }
+  .vcard.a .vtag { color: var(--a); background: var(--a-soft); }
+  .vcard.b .vtag { color: var(--b); background: var(--b-soft); }
+  .frow { display: flex; gap: 12px; }
+  .field { flex: 1; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  input[type=number], input[type=text].t { width: 100%; background: var(--bg); border: 1px solid var(--line-2); border-radius: 9px; padding: 10px 12px; color: var(--text); font-family: var(--mono); font-size: 15px; }
+  input[type=number]:focus, input.t:focus { outline: none; border-color: var(--a); box-shadow: 0 0 0 3px var(--a-soft); }
+  .vrate { margin-top: 14px; font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .vrate b { font-size: 22px; color: var(--text); font-weight: 600; display: block; margin-top: 2px; }
+  .vcard.a .vrate b { color: var(--a); } .vcard.b .vrate b { color: var(--b); }
+
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px; margin-top: 16px; }
+  .vbadge { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; padding: 8px 16px; border-radius: 999px; }
+  .vbadge .d { width: 9px; height: 9px; border-radius: 50%; }
+  .vbadge.win { color: var(--green); background: rgba(61,220,145,0.12); } .vbadge.win .d { background: var(--green); }
+  .vbadge.none { color: var(--amber); background: rgba(255,194,75,0.12); } .vbadge.none .d { background: var(--amber); }
+  .vbadge.lose { color: var(--red); background: rgba(255,107,107,0.12); } .vbadge.lose .d { background: var(--red); }
+  .vsub { color: var(--muted); font-size: 14px; margin-top: 12px; line-height: 1.5; max-width: 620px; }
+  .vsub b { color: var(--text); font-weight: 600; }
+
+  .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-top: 20px; }
+  @media (max-width: 620px){ .stats { grid-template-columns: 1fr 1fr; } }
+  .stat { background: var(--panel-2); border-radius: 11px; padding: 13px 15px; }
+  .stat .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); }
+  .stat .v { font-family: var(--mono); font-size: 22px; font-weight: 600; margin-top: 6px; }
+
+  .meter-wrap { margin-top: 20px; }
+  .meter-top { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 7px; }
+  .meter { position: relative; height: 9px; background: var(--panel-2); border-radius: 6px; overflow: hidden; }
+  .meter i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; transition: width .35s ease, background .35s ease; }
+  .thresh { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--faint); left: 95%; }
+  .thresh::after { content: '95%'; position: absolute; top: -16px; left: -10px; font-family: var(--mono); font-size: 9px; color: var(--faint); }
+
+  .chart-box { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-top: 16px; }
+  .chart-legend { display: flex; gap: 18px; font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .chart-legend .sw { width: 11px; height: 11px; border-radius: 3px; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  @media (max-width: 720px){ .two { grid-template-columns: 1fr; } }
+  .tool { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  .tool h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .tool p.sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+  .trow { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .trow label { font-size: 13px; color: var(--muted); }
+  .trow input { width: 120px; }
+  .result-line { border-top: 1px solid var(--line); margin-top: 8px; padding-top: 16px; }
+  .result-line .big { font-family: var(--mono); font-size: 28px; font-weight: 600; color: var(--a); }
+  .result-line .small { font-family: var(--mono); font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .result-line.green .big { color: var(--green); }
+
+  footer { margin-top: 70px; border-top: 1px solid var(--line); padding-top: 20px; font-family: var(--mono); font-size: 11px; color: var(--faint); line-height: 1.7; }
+</style>
+
+<div class="wrap">
+  <span class="eyebrow"><span class="dot"></span>Growth Experiment Analyzer</span>
+  <h1>Know if it <span class="g">actually</span> worked.</h1>
+  <p class="lede">Drop in the numbers from your two variants. LIFT tells you the real conversion rates, the true uplift, and whether the result is a genuine win or just noise. Then it plans your next test and projects the revenue at stake.</p>
+
+  <div class="sec-label">The test</div>
+  <div class="variants">
+    <div class="vcard a">
+      <div class="vhead"><input class="vname" id="nameA" value="Control" /><span class="vtag">A</span></div>
+      <div class="frow">
+        <div class="field"><label>Visitors</label><input type="number" id="visA" min="0" value="4820" /></div>
+        <div class="field"><label>Conversions</label><input type="number" id="convA" min="0" value="241" /></div>
+      </div>
+      <div class="vrate">Conversion rate <b id="rateA">5.00%</b></div>
+    </div>
+    <div class="vcard b">
+      <div class="vhead"><input class="vname" id="nameB" value="Variant" /><span class="vtag">B</span></div>
+      <div class="frow">
+        <div class="field"><label>Visitors</label><input type="number" id="visB" min="0" value="4790" /></div>
+        <div class="field"><label>Conversions</label><input type="number" id="convB" min="0" value="306" /></div>
+      </div>
+      <div class="vrate">Conversion rate <b id="rateB">6.39%</b></div>
+    </div>
+  </div>
+
+  <div class="sec-label">The verdict</div>
+  <div class="verdict">
+    <span class="vbadge none" id="badge"><span class="d"></span><span id="badgeText">Calculating</span></span>
+    <div class="vsub" id="verdictSub"></div>
+
+    <div class="stats">
+      <div class="stat"><div class="k">Relative uplift</div><div class="v" id="sUplift">—</div></div>
+      <div class="stat"><div class="k">Absolute change</div><div class="v" id="sAbs">—</div></div>
+      <div class="stat"><div class="k">Confidence</div><div class="v" id="sConf">—</div></div>
+      <div class="stat"><div class="k">P value</div><div class="v" id="sP">—</div></div>
+    </div>
+
+    <div class="meter-wrap">
+      <div class="meter-top"><span>Statistical confidence</span><span id="meterPct">—</span></div>
+      <div class="meter"><i id="meterFill" style="width:0%"></i><div class="thresh"></div></div>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <div class="chart-legend">
+      <span><span class="sw" style="background:var(--a)"></span>Control A</span>
+      <span><span class="sw" style="background:var(--b)"></span>Variant B</span>
+    </div>
+    <div id="chart"></div>
+  </div>
+
+  <div class="sec-label">Plan the next test and price the win</div>
+  <div class="two">
+    <div class="tool">
+      <h3>Sample size planner</h3>
+      <p class="sub">How many visitors you need to trust the result, and how long that takes at your traffic.</p>
+      <div class="trow"><label>Baseline rate</label><input type="number" id="baseRate" step="0.1" value="5" /></div>
+      <div class="trow"><label>Lift you want to detect (%)</label><input type="number" id="mde" step="1" value="15" /></div>
+      <div class="trow"><label>Weekly visitors (total)</label><input type="number" id="weekly" value="9600" /></div>
+      <div class="result-line">
+        <div class="big" id="sampleN">—</div>
+        <div class="small" id="sampleDays">visitors per variant</div>
+      </div>
+    </div>
+    <div class="tool">
+      <h3>Revenue impact</h3>
+      <p class="sub">If the current lift is real and you roll out the winner, what it is worth.</p>
+      <div class="trow"><label>Monthly visitors</label><input type="number" id="moVis" value="40000" /></div>
+      <div class="trow"><label>Value per conversion</label><input type="number" id="convVal" value="120" /></div>
+      <div class="trow"><label>&nbsp;</label><span style="font-family:var(--mono);font-size:12px;color:var(--faint)">uses B minus A</span></div>
+      <div class="result-line green">
+        <div class="big" id="moRev">—</div>
+        <div class="small" id="moConv">extra revenue per month</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    LIFT by Sneha · Growth experiment analyzer · Two proportion z test at 95 percent. Runs entirely in your browser, no data leaves the page.
+  </footer>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function erf(x) {
+    const s = x < 0 ? -1 : 1; x = Math.abs(x);
+    const t = 1 / (1 + 0.3275911 * x);
+    const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+    return s * y;
+  }
+  const normCdf = (z) => 0.5 * (1 + erf(z / Math.SQRT2));
+  const fmtPct = (x, d=2) => (x * 100).toFixed(d) + '%';
+  const money = (n) => '$' + Math.round(n).toLocaleString();
+
+  function compute() {
+    const nA = Math.max(0, parseInt($('visA').value) || 0);
+    const nB = Math.max(0, parseInt($('visB').value) || 0);
+    let cA = Math.max(0, parseInt($('convA').value) || 0);
+    let cB = Math.max(0, parseInt($('convB').value) || 0);
+    cA = Math.min(cA, nA); cB = Math.min(cB, nB);
+
+    const pA = nA ? cA / nA : 0;
+    const pB = nB ? cB / nB : 0;
+    $('rateA').textContent = fmtPct(pA);
+    $('rateB').textContent = fmtPct(pB);
+
+    const diff = pB - pA;
+    const relUplift = pA ? (diff / pA) : 0;
+
+    let z = 0, pValue = 1, conf = 0;
+    if (nA > 0 && nB > 0) {
+      const se = Math.sqrt(pA * (1 - pA) / nA + pB * (1 - pB) / nB);
+      if (se > 0) {
+        z = diff / se;
+        pValue = 2 * (1 - normCdf(Math.abs(z)));
+        conf = (1 - pValue) * 100;
+      }
+    }
+
+    $('sUplift').textContent = (relUplift >= 0 ? '+' : '') + (relUplift * 100).toFixed(1) + '%';
+    $('sUplift').style.color = relUplift >= 0 ? 'var(--green)' : 'var(--red)';
+    $('sAbs').textContent = (diff >= 0 ? '+' : '') + (diff * 100).toFixed(2) + ' pp';
+    $('sConf').textContent = conf.toFixed(1) + '%';
+    $('sP').textContent = pValue < 0.001 ? '<0.001' : pValue.toFixed(3);
+
+    $('meterFill').style.width = Math.min(100, conf) + '%';
+    $('meterPct').textContent = conf.toFixed(1) + '%';
+
+    const badge = $('badge'), badgeText = $('badgeText'), sub = $('verdictSub');
+    const sig = pValue < 0.05 && nA > 0 && nB > 0;
+    const nameA = $('nameA').value || 'A', nameB = $('nameB').value || 'B';
+    if (sig && diff > 0) {
+      badge.className = 'vbadge win'; badgeText.textContent = nameB + ' is a real winner';
+      $('meterFill').style.background = 'var(--green)';
+      sub.innerHTML = nameB + ' beats ' + nameA + ' by a <b>' + (relUplift*100).toFixed(1) + '% relative lift</b>, and at <b>' + conf.toFixed(1) + '% confidence</b> this is very unlikely to be chance. Safe to ship.';
+    } else if (sig && diff < 0) {
+      badge.className = 'vbadge lose'; badgeText.textContent = nameA + ' is winning';
+      $('meterFill').style.background = 'var(--red)';
+      sub.innerHTML = nameB + ' is actually <b>' + (Math.abs(relUplift)*100).toFixed(1) + '% worse</b> than ' + nameA + ', and the gap is significant. Keep the control.';
+    } else {
+      badge.className = 'vbadge none'; badgeText.textContent = 'No clear winner yet';
+      $('meterFill').style.background = 'var(--amber)';
+      sub.innerHTML = 'The gap could still be noise. You are at <b>' + conf.toFixed(1) + '% confidence</b>, below the 95% bar. Keep running, or you risk calling a win that is not real.';
+    }
+
+    drawChart(pA, pB, nA, nB);
+    impact(diff);
+  }
+
+  function drawChart(pA, pB, nA, nB) {
+    const W = 880, H = 220, pad = 30;
+    const seA = nA ? Math.sqrt(pA*(1-pA)/nA) : 0.01;
+    const seB = nB ? Math.sqrt(pB*(1-pB)/nB) : 0.01;
+    const lo = Math.max(0, Math.min(pA - 4*seA, pB - 4*seB));
+    const hi = Math.max(pA + 4*seA, pB + 4*seB);
+    const span = (hi - lo) || 0.01;
+    const X = (p) => pad + ((p - lo) / span) * (W - 2*pad);
+    const curve = (p, se) => {
+      if (se <= 0) return '';
+      let pts = [];
+      for (let i = 0; i <= 120; i++) {
+        const x = lo + (span * i / 120);
+        const y = Math.exp(-0.5 * Math.pow((x - p) / se, 2));
+        pts.push([X(x), y]);
+      }
+      const maxA = Math.max(...pts.map(q => q[1])) || 1;
+      return pts.map((q,i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ',' + (H - pad - q[1]/maxA * (H - 2*pad)).toFixed(1)).join(' ');
+    };
+    const pathA = curve(pA, seA), pathB = curve(pB, seB);
+    const ticks = [0, 0.25, 0.5, 0.75, 1].map(f => {
+      const v = lo + span * f; const x = X(v);
+      return `<line x1="${x}" y1="${H-pad}" x2="${x}" y2="${H-pad+4}" stroke="#5f6b7a" stroke-width="1"/><text x="${x}" y="${H-pad+17}" fill="#5f6b7a" font-size="11" font-family="IBM Plex Mono, monospace" text-anchor="middle">${(v*100).toFixed(1)}%</text>`;
+    }).join('');
+    $('chart').innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#262d38" stroke-width="1"/>
+      ${ticks}
+      <path d="${pathA} L ${X(pA+4*seA)},${H-pad} L ${X(pA-4*seA)},${H-pad} Z" fill="rgba(91,141,239,0.16)"/>
+      <path d="${pathB} L ${X(pB+4*seB)},${H-pad} L ${X(pB-4*seB)},${H-pad} Z" fill="rgba(245,163,60,0.16)"/>
+      <path d="${pathA}" fill="none" stroke="#5b8def" stroke-width="2.5"/>
+      <path d="${pathB}" fill="none" stroke="#f5a33c" stroke-width="2.5"/>
+      <line x1="${X(pA)}" y1="${pad-6}" x2="${X(pA)}" y2="${H-pad}" stroke="#5b8def" stroke-width="1" stroke-dasharray="3 3"/>
+      <line x1="${X(pB)}" y1="${pad-6}" x2="${X(pB)}" y2="${H-pad}" stroke="#f5a33c" stroke-width="1" stroke-dasharray="3 3"/>
+    </svg>`;
+  }
+
+  function planner() {
+    const p1 = (parseFloat($('baseRate').value) || 0) / 100;
+    const mde = (parseFloat($('mde').value) || 0) / 100;
+    const weekly = Math.max(1, parseInt($('weekly').value) || 1);
+    const p2 = p1 * (1 + mde);
+    const za = 1.96, zb = 0.84;
+    const pbar = (p1 + p2) / 2;
+    const numer = Math.pow(za * Math.sqrt(2*pbar*(1-pbar)) + zb * Math.sqrt(p1*(1-p1) + p2*(1-p2)), 2);
+    const denom = Math.pow(p2 - p1, 2);
+    let nPer = denom > 0 ? Math.ceil(numer / denom) : 0;
+    if (!isFinite(nPer) || nPer <= 0) { $('sampleN').textContent = '—'; $('sampleDays').textContent = 'enter a baseline and lift'; return; }
+    $('sampleN').textContent = nPer.toLocaleString();
+    const days = Math.ceil((nPer * 2) / weekly * 7);
+    $('sampleDays').textContent = 'visitors per variant · about ' + days + ' days at your traffic';
+  }
+
+  function impact(diff) {
+    const moVis = Math.max(0, parseInt($('moVis').value) || 0);
+    const val = Math.max(0, parseFloat($('convVal').value) || 0);
+    const extraConv = moVis * Math.max(0, diff);
+    $('moRev').textContent = money(extraConv * val);
+    $('moConv').textContent = 'extra revenue per month · ' + Math.round(extraConv).toLocaleString() + ' more conversions';
+  }
+
+  function recompute(){ compute(); planner(); }
+  document.querySelectorAll('input').forEach(el => el.addEventListener('input', recompute));
+  recompute();
+</script>
